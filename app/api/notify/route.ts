@@ -32,8 +32,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     console.log('📥 API Request received:', JSON.stringify(body, null, 2));
 
-    // Check if this is a subscription registration request
-    if (body.subscription) {
+    // Check if this is a subscription registration request (ONLY subscription, no type)
+    if (body.subscription && !body.type) {
       console.log('💾 Storing push subscription...');
       // Store the push subscription
       const subscription = body.subscription as webpush.PushSubscription;
@@ -209,6 +209,17 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('API Error:', error);
+    // Extra granularity for web-push errors and fetch-style errors
+    if (typeof error === 'object' && error !== null) {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore – non-standard fields are present on some error objects
+      const statusCode = error.statusCode ?? error.status ?? 'unknown';
+      // @ts-ignore
+      const body = error.body || error.responseBody || undefined;
+      console.error('Error statusCode:', statusCode);
+      if (body) console.error('Error body:', body);
+    }
+
     console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     return NextResponse.json(
       { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
