@@ -1,0 +1,11 @@
+# PWA Notification Demo Environment Variables
+# Copy this content to .env.local and replace the placeholder values
+
+# VAPID Keys for Web Push Notifications
+# Generate these using: npx web-push generate-vapid-keys
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=YOUR_VAPID_PUBLIC_KEY_HERE
+VAPID_PRIVATE_KEY=YOUR_VAPID_PRIVATE_KEY_HERE
+
+# Optional: Contact email for VAPID
+# VAPID_EMAIL=your-email@example.com 
+

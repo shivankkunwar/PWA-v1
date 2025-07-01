@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Push Test</title>
+</head>
+<body>
+    <h1>Push Notification Test</h1>
+    <button id="test">Test Push Subscription</button>
+    <pre id="output"></pre>
+
+    <script>
+        const publicKey = 'BJCYodv-yqhixo9_SoE68bwivX2NJzb14b5tCJXi5c_m0VswyAwcsn0eqbw8_BChGzhZahWbDx8na3WfKFfXlQk';
+        const output = document.getElementById('output');
+        
+        function log(msg) {
+            output.textContent += msg + '\n';
+            console.log(msg);
+        }
+
+        function urlBase64ToUint8Array(base64String) {
+            const padding = '='.repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding)
+                .replace(/-/g, '+')
+                .replace(/_/g, '/');
+            const rawData = window.atob(base64);
+            const outputArray = new Uint8Array(rawData.length);
+            for (let i = 0; i < rawData.length; ++i) {
+                outputArray[i] = rawData.charCodeAt(i);
+            }
+            return outputArray;
+        }
+
+        document.getElementById('test').addEventListener('click', async () => {
+            try {
+                log('1. Checking browser support...');
+                if (!('serviceWorker' in navigator)) throw new Error('No Service Worker support');
+                if (!('PushManager' in window)) throw new Error('No PushManager support');
+                
+                log('2. Requesting notification permission...');
+                const perm = await Notification.requestPermission();
+                log('   Permission: ' + perm);
+                if (perm !== 'granted') throw new Error('Permission denied');
+                
+                log('3. Registering service worker...');
+                const reg = await navigator.serviceWorker.register('/sw.js');
+                log('   Registered: ' + reg.scope);
+                
+                log('4. Waiting for SW ready...');
+                await navigator.serviceWorker.ready;
+                log('   Ready!');
+                
+                log('5. Checking existing subscription...');
+                let sub = await reg.pushManager.getSubscription();
+                if (sub) {
+                    log('   Found existing, unsubscribing...');
+                    await sub.unsubscribe();
+                }
+                
+                log('6. Creating new subscription...');
+                log('   Key length: ' + urlBase64ToUint8Array(publicKey).length);
+                
+                sub = await reg.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlBase64ToUint8Array(publicKey)
+                });
+                
+                log('✅ SUCCESS! Endpoint: ' + sub.endpoint.substring(0, 50) + '...');
+                
+            } catch (error) {
+                log('❌ ERROR: ' + error.message);
+                log('   Stack: ' + error.stack);
+            }
+        });
+    </script>
+</body>
+</html> 
