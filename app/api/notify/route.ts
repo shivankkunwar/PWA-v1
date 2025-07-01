@@ -32,6 +32,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     console.log('📥 API Request received:', JSON.stringify(body, null, 2));
 
+    // Log stored subscription endpoints (last 30 chars for brevity)
+    console.log('📋 Currently stored subscriptions:', pushSubscriptions.map((s) => s.endpoint.slice(-30)));
+
     // Check if this is a subscription registration request (ONLY subscription, no type)
     if (body.subscription && !body.type) {
       console.log('💾 Storing push subscription...');
@@ -62,6 +65,17 @@ export async function POST(request: NextRequest) {
 
     // Check if this is a notification simulation request
     if (body.type) {
+      // If a subscription accompanies the simulation request, upsert it every time to avoid memory gaps across lambdas
+      if (body.subscription) {
+        const sub = body.subscription as webpush.PushSubscription;
+        const idx = pushSubscriptions.findIndex((s) => s.endpoint === sub.endpoint);
+        if (idx >= 0) {
+          pushSubscriptions[idx] = sub;
+        } else {
+          pushSubscriptions.push(sub);
+        }
+      }
+
       const notificationType = body.type as 'new_match' | 'new_message' | 'chat_expiry';
 
       // If no subscriptions stored and client sends a subscription along with type, store it
@@ -81,13 +95,14 @@ export async function POST(request: NextRequest) {
       }
 
       // Create notification payload based on type
+      const nowTagSuffix = Date.now(); // Help distinguish duplicates during debugging
       const notificationPayloads = {
         new_match: {
           title: 'A New Spark! ✨',
           body: "You've matched with someone special!",
           icon: '/icon-192x192.svg',
           badge: '/icon-192x192.svg',
-          tag: 'new_match',
+          tag: `new_match_${nowTagSuffix}`,
           data: {
             url: '/chats?new_match=true',
             type: 'new_match'
@@ -109,7 +124,7 @@ export async function POST(request: NextRequest) {
           body: 'Someone sent you a message.',
           icon: '/icon-192x192.svg',
           badge: '/icon-192x192.svg',
-          tag: 'new_message',
+          tag: `new_message_${nowTagSuffix}`,
           data: {
             url: '/chats/123',
             type: 'new_message'
@@ -131,7 +146,7 @@ export async function POST(request: NextRequest) {
           body: 'A chat is about to expire. Don\'t miss out!',
           icon: '/icon-192x192.svg',
           badge: '/icon-192x192.svg',
-          tag: 'chat_expiry',
+          tag: `chat_expiry_${nowTagSuffix}`,
           data: {
             url: '/chats/456',
             type: 'chat_expiry'

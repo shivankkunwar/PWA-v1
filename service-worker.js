@@ -55,7 +55,7 @@ self.addEventListener('fetch', (event) => {
 
 // Push event - handle incoming push notifications
 self.addEventListener('push', (event) => {
-  console.log('Push event received:', event);
+  console.log('Push event received (raw):', event);
 
   if (!event.data) {
     console.log('Push event but no data');
@@ -65,7 +65,9 @@ self.addEventListener('push', (event) => {
   try {
     // Parse the push payload
     const data = event.data.json();
-    console.log('Push data:', data);
+    console.log('Push data parsed:', data);
+    // Extra diagnostics: timestamp + tag
+    console.log('SW push @', new Date().toISOString(), 'tag=', data.tag, 'title=', data.title);
 
     // Default notification options
     const defaultOptions = {
