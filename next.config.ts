@@ -12,6 +12,7 @@ const pwa = withPWA({
     /middleware-manifest\.json$/,
   ],
   dynamicStartUrl: false,
+  swSrc: 'service-worker.js',
 });
 
 const nextConfig: NextConfig = {
