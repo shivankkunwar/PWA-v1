@@ -1,6 +1,10 @@
 // Service Worker for PWA Notification Demo
 // This handles push events, caching, and notification interactions
 
+// Workbox precaching - next-pwa will inject the manifest here
+import { precacheAndRoute } from 'workbox-precaching';
+precacheAndRoute(self.__WB_MANIFEST);
+
 const CACHE_NAME = 'pwa-notification-demo-v1';
 const urlsToCache = [
   '/',
